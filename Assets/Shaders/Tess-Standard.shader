@@ -18,8 +18,7 @@ Shader "Tessellation/Standard" {
 		_Occlusion("Occlusion Scale", Range(0,1)) = 1
 		_SpecularColor("Metallic",Range(0,1)) = 0.3
 		_EmissionColor("Emission Color", Color) = (0,0,0,1)
-		_VertexScale("Vertex Scale", Range(-3,3)) = 0.1
-		_VertexOffset("Vertex Offset", float) = 0
+		_VertexScale("Vertex Scale", Range(0,3)) = 0.1
 		_DetailAlbedo("Detail Albedo Map", 2D) = "black"{}
 		_AlbedoBlend("Albedo Blend Rate", Range(0,1)) = 0.3
 		_DetailBump("Detail Bump Map", 2D) = "bump"{}
@@ -69,7 +68,6 @@ CGINCLUDE
 		float _NormalScale;
 		float _Occlusion;
 		float _VertexScale;
-		float _VertexOffset;
 		sampler2D _DetailAlbedo;
 		float _AlbedoBlend;
 		sampler2D _DetailBump;
@@ -172,7 +170,7 @@ inline float2 parallax_mapping(float3 tangentViewDir, float2 uv)
 
 inline void vert(inout appdata_full v){
   #if ENABLE_TESSELLATION
-	v.vertex.xyz += v.normal * ((tex2Dlod(_HeightMap, v.texcoord).r - 0.5) * _VertexScale +  _VertexOffset);
+	v.vertex.xyz += v.normal *((tex2Dlod(_HeightMap, v.texcoord).r) * _VertexScale);
   #endif
 }
 
@@ -945,7 +943,7 @@ ENDCG
 	Pass {
 		Name "ShadowCaster"
 		Tags { "LightMode" = "ShadowCaster" }
-		ZWrite On ZTest LEqual
+		ZWrite On ZTest Less Cull Off
 
 CGPROGRAM
 // compile directives
@@ -984,7 +982,7 @@ inline v2f_surf vert_surf (appdata_base v) {
 
 // fragment shader
 inline float4 frag_surf (v2f_surf IN) : SV_Target {
- 	return 1;
+ 	SHADOW_CASTER_FRAGMENT(IN)
 }
 
 
@@ -993,6 +991,115 @@ inline float4 frag_surf (v2f_surf IN) : SV_Target {
 ENDCG
 
 }
+
+/*
+Pass {
+		Name "ShadowCaster"
+		Tags { "LightMode" = "ShadowCaster" }
+		ZWrite On ZTest Less Cull Off
+
+CGPROGRAM
+
+#pragma vertex tessvert_shadow
+#pragma fragment frag_shadow
+#pragma hull hull_shadow
+#pragma domain domain_shadow
+
+#pragma target 5.0
+
+#pragma skip_variants FOG_LINEAR FOG_EXP FOG_EXP2
+#pragma multi_compile_shadowcaster
+
+// -------- variant for: <when no other keywords are defined>
+#if !defined(INSTANCING_ON)
+#define UNITY_PASS_SHADOWCASTER
+
+#define INTERNAL_DATA
+#define WorldReflectionVector(data,normal) data.worldRefl
+#define WorldNormalVector(data,normal) normal
+
+// Original surface shader snippet:
+#line 10 ""
+#ifdef DUMMY_PREPROCESSOR_TO_WORK_AROUND_HLSL_COMPILER_LINE_HANDLING
+#endif
+
+struct v2f_surf {
+  V2F_SHADOW_CASTER;
+};
+
+struct InternalTessInterp_appdata_base {
+  float4 vertex : INTERNALTESSPOS;
+  float3 normal : NORMAL;
+  float4 texcoord : TEXCOORD0;
+};
+
+inline InternalTessInterp_appdata_base tessvert_shadow (appdata_base v) {
+  InternalTessInterp_appdata_base o;
+  o.vertex = v.vertex;
+  o.normal = v.normal;
+  o.texcoord = v.texcoord;
+  return o;
+}
+
+inline UnityTessellationFactors hsconst_shadow (InputPatch<InternalTessInterp_appdata_base,3> v) {
+  UnityTessellationFactors o;
+  float3 tf = (tessDist(v[0].vertex, v[1].vertex, v[2].vertex));
+  o.edge[0] = tf.x;
+  o.edge[1] = tf.y;
+  o.edge[2] = tf.z;
+  o.inside = (tf.x + tf.y + tf.z) * 0.33333333;
+  return o;
+}
+
+inline v2f_surf vert_surf (appdata_base v) {
+  v2f_surf o;
+  UNITY_INITIALIZE_OUTPUT(v2f_surf,o);
+  TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
+  return o;
+}
+
+[UNITY_domain("tri")]
+[UNITY_partitioning("fractional_odd")]
+[UNITY_outputtopology("triangle_cw")]
+[UNITY_patchconstantfunc("hsconst_shadow")]
+[UNITY_outputcontrolpoints(3)]
+inline InternalTessInterp_appdata_base hull_shadow (InputPatch<InternalTessInterp_appdata_base,3> v, uint id : SV_OutputControlPointID) {
+  return v[id];
+}
+
+[UNITY_domain("tri")]
+inline v2f_surf domain_shadow (UnityTessellationFactors tessFactors, const OutputPatch<InternalTessInterp_appdata_base,3> vi, float3 bary : SV_DomainLocation) {
+  appdata_base v;
+  v.vertex = vi[0].vertex*bary.x + vi[1].vertex*bary.y + vi[2].vertex*bary.z;
+  #if USE_PHONG
+  float3 pp[3];
+  pp[0] = v.vertex.xyz - vi[0].normal * (dot(v.vertex.xyz, vi[0].normal) - dot(vi[0].vertex.xyz, vi[0].normal));
+  pp[1] = v.vertex.xyz - vi[1].normal * (dot(v.vertex.xyz, vi[1].normal) - dot(vi[1].vertex.xyz, vi[1].normal));
+  pp[2] = v.vertex.xyz - vi[2].normal * (dot(v.vertex.xyz, vi[2].normal) - dot(vi[2].vertex.xyz, vi[2].normal));
+  v.vertex.xyz = _Phong * (pp[0]*bary.x + pp[1]*bary.y + pp[2]*bary.z) + (1.0f-_Phong) * v.vertex.xyz;
+  #endif
+  v.normal = vi[0].normal*bary.x + vi[1].normal*bary.y + vi[2].normal*bary.z;
+  v.texcoord = vi[0].texcoord*bary.x + vi[1].texcoord*bary.y + vi[2].texcoord*bary.z;
+  vert(v);
+  v2f_surf o = vert_surf (v);
+  return o;
+}
+
+// vertex shader
+
+
+// fragment shader
+inline float4 frag_shadow (v2f_surf IN) : SV_Target {
+ 	SHADOW_CASTER_FRAGMENT(IN)
+}
+
+
+#endif
+
+ENDCG
+
+}*/
+
 	// ---- meta information extraction pass:
 	Pass {
 		Name "Meta"
