@@ -957,7 +957,7 @@ ENDCG
 Pass {
 		Name "ShadowCaster"
 		Tags { "LightMode" = "ShadowCaster" }
-		ZWrite On ZTest Less Cull Off
+		ZWrite On ZTest Less
 
 CGPROGRAM
 // compile directives
