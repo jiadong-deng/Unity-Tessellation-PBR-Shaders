@@ -19,6 +19,7 @@ Shader "Tessellation/Standard" {
 		_SpecularColor("Metallic",Range(0,1)) = 0.3
 		_EmissionColor("Emission Color", Color) = (0,0,0,1)
 		_VertexScale("Vertex Scale", Range(0,3)) = 0.1
+    _VertexOffset("Vertex Offset", Range(-1,1)) = 0
 		_DetailAlbedo("Detail Albedo Map", 2D) = "black"{}
 		_AlbedoBlend("Albedo Blend Rate", Range(0,1)) = 0.3
 		_DetailBump("Detail Bump Map", 2D) = "bump"{}
@@ -68,6 +69,7 @@ CGINCLUDE
 		float _NormalScale;
 		float _Occlusion;
 		float _VertexScale;
+    float _VertexOffset;
 		sampler2D _DetailAlbedo;
 		float _AlbedoBlend;
 		sampler2D _DetailBump;
@@ -170,7 +172,7 @@ inline float2 parallax_mapping(float3 tangentViewDir, float2 uv)
 
 inline void vert(inout appdata_full v){
   #if ENABLE_TESSELLATION
-	v.vertex.xyz += v.normal *((tex2Dlod(_HeightMap, v.texcoord).r) * _VertexScale);
+	v.vertex.xyz += v.normal * ((tex2Dlod(_HeightMap, v.texcoord).r + _VertexOffset) * _VertexScale);
   #endif
 }
 

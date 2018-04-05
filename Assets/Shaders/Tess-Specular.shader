@@ -17,6 +17,7 @@
 		_SpecularColor("Specular Color",Color) = (0.2,0.2,0.2,1)
 		_EmissionColor("Emission Color", Color) = (0,0,0,1)
 		_VertexScale("Vertex Scale", Range(0,3)) = 0.1
+		_VertexOffset("Vertex Offset", Range(-1,1)) = 0
 		_DetailAlbedo("Detail Albedo(RGB) Mask(A)", 2D) = "black"{}
 		_AlbedoBlend("Albedo Blend Rate", Range(0,1)) = 0.3
 		_DetailBump("Detail Bump(RGB) Mask(A)", 2D) = "bump"{}
@@ -69,6 +70,7 @@ CGINCLUDE
 		float _NormalScale;
 		float _Occlusion;
 		float _VertexScale;
+		float _VertexOffset;
 		sampler2D _DetailAlbedo;
 		float _AlbedoBlend;
 		sampler2D _DetailBump;
@@ -164,13 +166,7 @@ inline InternalTessInterp_appdata_full tessvert_surf (appdata_full v) {
 
 inline void vert(inout appdata_full v){
   #if ENABLE_TESSELLATION
-	v.vertex.xyz += v.normal *((tex2Dlod(_HeightMap, v.texcoord).r) * _VertexScale);
-  #endif
-}
-
-inline void vert(inout appdata_base v){
-  #if ENABLE_TESSELLATION
-	v.vertex.xyz += v.normal *((tex2Dlod(_HeightMap, v.texcoord).r) * _VertexScale);
+	v.vertex.xyz += v.normal * ((tex2Dlod(_HeightMap, v.texcoord).r + _VertexOffset) * _VertexScale);
   #endif
 }
 
