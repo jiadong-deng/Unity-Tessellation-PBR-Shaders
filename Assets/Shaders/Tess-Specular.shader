@@ -41,6 +41,7 @@ CGINCLUDE
 #include "UnityPBSLighting.cginc"
 #include "UnityMetaPass.cginc"
 #include "AutoLight.cginc"
+
 #pragma shader_feature USE_NORMAL
 #pragma shader_feature USE_SPECULAR
 #pragma shader_feature USE_VERTEX
@@ -49,7 +50,7 @@ CGINCLUDE
 #pragma shader_feature USE_ALBEDO
 #pragma shader_feature USE_DETAILALBEDO
 #pragma shader_feature USE_DETAILNORMAL
-#pragma shader_feature ENABLE_TESSELLATION
+#pragma multi_compile DISABLE_TESSELLATION ENABLE_TESSELLATION 
 		struct Input {
 			float2 uv_MainTex;
 			#if USE_DETAILALBEDO
