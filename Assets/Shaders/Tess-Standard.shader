@@ -89,6 +89,14 @@ CGINCLUDE
 		float _Glossiness;
 		float4 _Color;
 
+struct appdata_tess{
+    float4 vertex : POSITION;
+    float4 tangent : TANGENT;
+    float3 normal : NORMAL;
+    float4 texcoord : TEXCOORD0;
+    float4 texcoord1 : TEXCOORD1;
+    float4 texcoord2 : TEXCOORD2;
+};
 
 
 	inline void surf (Input IN, inout SurfaceOutputStandard o) {
@@ -150,7 +158,7 @@ struct InternalTessInterp_appdata_full {
   float4 texcoord1 : TEXCOORD1;
   float4 texcoord2 : TEXCOORD2;
 };
-inline InternalTessInterp_appdata_full tessvert_surf (appdata_full v) {
+inline InternalTessInterp_appdata_full tessvert_surf (appdata_tess v) {
   InternalTessInterp_appdata_full o;
   o.vertex = v.vertex;
   o.tangent = v.tangent;
@@ -170,7 +178,7 @@ inline float2 parallax_mapping(float3 tangentViewDir, float2 uv)
 	return P;
 }
 
-inline void vert(inout appdata_full v){
+inline void vert(inout appdata_tess v){
   #if ENABLE_TESSELLATION
 	v.vertex.xyz += v.normal * ((tex2Dlod(_HeightMap, v.texcoord).r + _VertexOffset) * _VertexScale);
   #endif
@@ -321,7 +329,7 @@ struct v2f_surf {
 float4 _MainTex_ST;
 
 // vertex shader
-inline v2f_surf vert_surf (appdata_full v) {
+inline v2f_surf vert_surf (appdata_tess v) {
   
   v2f_surf o;
   UNITY_INITIALIZE_OUTPUT(v2f_surf,o);
@@ -381,7 +389,7 @@ inline v2f_surf vert_surf (appdata_full v) {
 // tessellation domain shader
 [UNITY_domain("tri")]
 inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch<InternalTessInterp_appdata_full,3> vi, float3 bary : SV_DomainLocation) {
-  appdata_full v;
+  appdata_tess v;
 
   v.vertex = vi[0].vertex*bary.x + vi[1].vertex*bary.y + vi[2].vertex*bary.z;
 
@@ -398,8 +406,6 @@ inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch
   v.texcoord = vi[0].texcoord*bary.x + vi[1].texcoord*bary.y + vi[2].texcoord*bary.z;
   v.texcoord1 = vi[0].texcoord1*bary.x + vi[1].texcoord1*bary.y + vi[2].texcoord1*bary.z;
   v.texcoord2 = vi[0].texcoord2*bary.x + vi[1].texcoord2*bary.y + vi[2].texcoord2*bary.z;
-  v.texcoord3 = 0;
-  v.color = 0;
   #if USE_VERTEX
   vert(v);
   #endif
@@ -573,7 +579,7 @@ struct v2f_surf {
 float4 _MainTex_ST;
 
 // vertex shader
-inline v2f_surf vert_surf (appdata_full v) {
+inline v2f_surf vert_surf (appdata_tess v) {
 
   v2f_surf o;
   UNITY_INITIALIZE_OUTPUT(v2f_surf,o);
@@ -611,7 +617,7 @@ inline v2f_surf vert_surf (appdata_full v) {
 // tessellation domain shader
 [UNITY_domain("tri")]
 inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch<InternalTessInterp_appdata_full,3> vi, float3 bary : SV_DomainLocation) {
-  appdata_full v;
+  appdata_tess v;
   v.vertex = vi[0].vertex*bary.x + vi[1].vertex*bary.y + vi[2].vertex*bary.z;
     #if USE_PHONG && ENABLE_TESSELLATION
   float3 pp[3];
@@ -625,8 +631,6 @@ inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch
   v.texcoord = vi[0].texcoord*bary.x + vi[1].texcoord*bary.y + vi[2].texcoord*bary.z;
   v.texcoord1 = vi[0].texcoord1*bary.x + vi[1].texcoord1*bary.y + vi[2].texcoord1*bary.z;
   v.texcoord2 = 0;
-  v.texcoord3 = 0;
-  v.color = 0;
     #if USE_VERTEX
   vert(v);
   #endif
@@ -776,7 +780,7 @@ struct v2f_surf {
 float4 _MainTex_ST;
 
 // vertex shader
-inline v2f_surf vert_surf (appdata_full v) {
+inline v2f_surf vert_surf (appdata_tess v) {
   v2f_surf o;
   UNITY_INITIALIZE_OUTPUT(v2f_surf,o);
 
@@ -828,7 +832,7 @@ inline v2f_surf vert_surf (appdata_full v) {
 // tessellation domain shader
 [UNITY_domain("tri")]
 inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch<InternalTessInterp_appdata_full,3> vi, float3 bary : SV_DomainLocation) {
-  appdata_full v;
+  appdata_tess v;
   v.vertex = vi[0].vertex*bary.x + vi[1].vertex*bary.y + vi[2].vertex*bary.z;
     #if USE_PHONG && ENABLE_TESSELLATION
   float3 pp[3];
@@ -842,8 +846,6 @@ inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch
   v.texcoord = vi[0].texcoord*bary.x + vi[1].texcoord*bary.y + vi[2].texcoord*bary.z;
   v.texcoord1 = vi[0].texcoord1*bary.x + vi[1].texcoord1*bary.y + vi[2].texcoord1*bary.z;
   v.texcoord2 = vi[0].texcoord2*bary.x + vi[1].texcoord2*bary.y + vi[2].texcoord2*bary.z;
-  v.texcoord3 = 0;
-  v.color = 0;
     #if USE_VERTEX
   vert(v);
   #endif
@@ -1167,7 +1169,7 @@ struct v2f_surf {
 float4 _MainTex_ST;
 
 // vertex shader
-inline v2f_surf vert_surf (appdata_full v) {
+inline v2f_surf vert_surf (appdata_tess v) {
 
   v2f_surf o;
   UNITY_INITIALIZE_OUTPUT(v2f_surf,o);
@@ -1190,7 +1192,7 @@ inline v2f_surf vert_surf (appdata_full v) {
 // tessellation domain shader
 [UNITY_domain("tri")]
 inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch<InternalTessInterp_appdata_full,3> vi, float3 bary : SV_DomainLocation) {
-  appdata_full v;
+  appdata_tess v;
   v.vertex = vi[0].vertex*bary.x + vi[1].vertex*bary.y + vi[2].vertex*bary.z;
     #if USE_PHONG && ENABLE_TESSELLATION
   float3 pp[3];
@@ -1204,8 +1206,6 @@ inline v2f_surf ds_surf (UnityTessellationFactors tessFactors, const OutputPatch
   v.texcoord = vi[0].texcoord*bary.x + vi[1].texcoord*bary.y + vi[2].texcoord*bary.z;
   v.texcoord1 = vi[0].texcoord1*bary.x + vi[1].texcoord1*bary.y + vi[2].texcoord1*bary.z;
   v.texcoord2 = vi[0].texcoord2*bary.x + vi[1].texcoord2*bary.y + vi[2].texcoord2*bary.z;
-  v.texcoord3 = 0;
-  v.color = 0;
    #if USE_VERTEX
   vert(v);
   #endif
