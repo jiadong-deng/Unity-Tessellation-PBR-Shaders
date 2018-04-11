@@ -36,8 +36,7 @@ CGINCLUDE
 #include "UnityShaderVariables.cginc"
 #include "UnityShaderUtilities.cginc"
 #include "UnityCG.cginc"
-#include "Lighting.cginc"
-#include "UnityPBSLighting.cginc"
+#include "CgIncludes/CustomLighting.cginc"
 #include "UnityMetaPass.cginc"
 #include "AutoLight.cginc"
 #pragma shader_feature USE_NORMAL
